@@ -1,5 +1,5 @@
 
-void mainhtml1(WiFiClient i_client)
+void mainhtml1(WiFiClient i_client, cl_switch_man lo_switch_man)
 {
 	if (gx_debug == "X")
 	{
@@ -12,16 +12,16 @@ void mainhtml1(WiFiClient i_client)
 		}
 		delay(1000);
 	}
-	// HTML header start
+	// -------------------------------------------------HTML header start
 	i_client.println("HTTP/1.1 200 OK");
 	i_client.println("Content-type:text/html");
 	i_client.println("Connection: close");
 	i_client.println();
-	// HTML header end
+	// ------------------------------------------------- HTML header end
 	i_client.println("<!DOCTYPE html><html>");
 	i_client.println(
 		"<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" >");
-	i_client.print("<script>function f_submit() {document.getElementById('main_form').submit();}</script>");
+	i_client.print("<script>function f_submit() {document.getElementById('range_form').submit();}</script>");
 	i_client.print(
 		"<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
 	i_client.print(
@@ -32,11 +32,14 @@ void mainhtml1(WiFiClient i_client)
 		".input {font-size: 30px; position: absolute; left: 100px; background-color:#FFFFE0;}");
 	i_client.print(".button2 {background-color: #555555;}");
 	i_client.print("#time {background-color: #c2fc03; width: 50%; border: 1px solid black; margin: auto; text-align: center;}</style>");
-	//Range element for manual switch: call routine f_submit
+	// -------------------------------------------------Range element for manual switch: call routine f_submit
+	i_client.print("Manuell schalten<br>");
 	i_client.print("<br><form id='range_form'><span style ='color:green;'>&nbsp;Aus</span><input type='range' oninput='f_submit()' id='switch' name='switch' min='0' max='1' value='");
+	i_client.print(gi_state);
 	i_client.print("'><span style ='color:red;'>&nbsp;An</span>");
 	i_client.print("<br>Ausschalten in<input style='background-color:#FFFFE0' name='ttl' type='number' min='1' max='999' maxlength='3' size='3' autofocus>Minuten<br><br></p></form>");
-	//End of Range element
+	i_client.print("<br><br><br>");
+	// -------------------------------------------------End of Range element
 	i_client.print("<b>Schaltzeiten einstellen<br></b>");
 	i_client.print("Hostname:&nbsp;<a href='http://");
 	i_client.print(gs_DHCPhostname);

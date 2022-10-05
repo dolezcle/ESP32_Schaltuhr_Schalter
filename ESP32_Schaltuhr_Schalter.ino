@@ -21,11 +21,12 @@
 #include <esp_wifi.h>
 #include <time.h>
 #include <Preferences.h>
+#include "cl_switch_man.h"
 #include "g_vars.h"
 #include "gen_funcs.h"
 #include "ini_loop.h"
 #include "spec_funcs.h"
-#include "cl_switch_man.h"
+
 
 //#include <ESPmDNS.h>                            //<---funktioniert nicht mit Android
 
@@ -187,6 +188,7 @@ void loop()
 	String l_inputval; //(Raw) Value of Range 0 or 1 (Off, On)
 	String lstr_autooff = "";
 	char la_autooff[10] = "X";
+	
 	if (gx_debug == "X")
 	{
 		Serial.println("Im Hauptloop");
@@ -197,6 +199,7 @@ void loop()
 	getLocalTime(&g_loc_time);
 	setenv("TZ", "CET-1CEST,M3.5.0/2,M10.5.0/3", 1); // scheint im setup() nicht zu reichen
 	gi_ettime = mktime(&g_loc_time);				 // lokale Zeit als int aus der ntp-Zeit
+	go_switch_man.initialize();
 	if (WiFi.status() == WL_CONNECTED)
 	{
 		if (!pub_server)
@@ -280,10 +283,7 @@ void loop()
 		{
 			delay(500);
 		}
-		if (gx_header.indexOf("GET /?on") > -1)
-
-		// if (gx_header.indexOf("GET / HTTP/1.1") == -1)
-		{
+		if (gx_header.indexOf("GET /?on") > -1)		{
 			// Serial.println(gx_header.indexOf("GET / HTTP/1.1"));
 			// delay(1000);
 
@@ -310,7 +310,14 @@ void loop()
 
 		saveswitchtimes();
 		if (gx_header.indexOf("GET /?switch") > -1){
-			
+			go_switch_man.set_offtime(get_substring(gx_header, "switch=", "&", 0), get_substring(gx_header, "ttl=", " HTTP", 0));
+			if (gx_debug == "X")
+		{Serial.print("Direktes Schalten: ");
+		
+		Serial.print("go_switch_man.li_autooff: ");
+		Serial.println(go_switch_man.li_autooff);
+		delay(1000);
+		}
 		}
 
 		if (gx_debug == "X")
@@ -322,7 +329,7 @@ void loop()
 			Serial.println(gx_off[ln_count]);			
 			}
 		}
-		mainhtml1(pub_client);
+		mainhtml1(pub_client, go_switch_man);
 
 		pub_client.stop();
 	}
