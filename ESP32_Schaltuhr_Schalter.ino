@@ -185,6 +185,7 @@ void setup()
 
 void loop()
 {
+	go_switch_man.initialize();
 	String l_inputval; //(Raw) Value of Range 0 or 1 (Off, On)
 	String lstr_autooff = "";
 	char la_autooff[10] = "X";
@@ -195,7 +196,6 @@ void loop()
 		delay(100);
 	}
 	
-	// gi_ttime = esp_timer_get_time();
 	getLocalTime(&g_loc_time);
 	setenv("TZ", "CET-1CEST,M3.5.0/2,M10.5.0/3", 1); // scheint im setup() nicht zu reichen
 	gi_ettime = mktime(&g_loc_time);				 // lokale Zeit als int aus der ntp-Zeit
@@ -240,9 +240,7 @@ void loop()
 	{
 		gi_etime = 0;
 	}
-	//	Serial.print("    gi_etime vor pub_client: ");
-	//	Serial.println(gi_etime);
-	//	delay(1000);
+	
 	if (gi_ettime > gi_etime && gi_etime > 0 && gpio_state == 1)
 	{
 		Serial.println("A U S G E S C H A L T E T");
@@ -274,8 +272,7 @@ void loop()
 	while (pub_client.connected())
 	{
 		Serial.print("im pub_client.connected ");
-		// delay(1000);
-		//		Serial.println(WiFi.localIP());
+		
 		gx_header = pub_client.readStringUntil('\n');
 		Serial.print("gx_header: ");
 		Serial.println(gx_header);
@@ -301,7 +298,7 @@ void loop()
 			gx_off[6] = get_substring(gx_header, "off6=", "&on0=", 0);
 			gx_on[0] = get_substring(gx_header, "on0=", "&off0=", 0);
 			gx_off[0] = get_substring(gx_header, "off0=", " HTTP", 0);
-		}
+		
 		for (int ln_count = 0; ln_count < 7; ln_count++)
 		{
 			gx_on[ln_count].replace("%3A", gc_col);
@@ -309,8 +306,10 @@ void loop()
 		}
 
 		saveswitchtimes();
+		}
 		if (gx_header.indexOf("GET /?switch") > -1){
 			go_switch_man.set_offtime(get_substring(gx_header, "switch=", "&", 0), get_substring(gx_header, "ttl=", " HTTP", 0));
+
 			if (gx_debug == "X")
 		{Serial.print("Direktes Schalten: ");
 		

@@ -21,7 +21,9 @@ void mainhtml1(WiFiClient i_client, cl_switch_man lo_switch_man)
 	i_client.println("<!DOCTYPE html><html>");
 	i_client.println(
 		"<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" >");
+	// -------------------------------------------------js func f_submit	
 	i_client.print("<script>function f_submit() {document.getElementById('range_form').submit();}</script>");
+	// -------------------------------------------------end js func f_submit
 	i_client.print(
 		"<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
 	i_client.print(
@@ -103,7 +105,8 @@ void mainhtml1(WiFiClient i_client, cl_switch_man lo_switch_man)
 
 void flipswitch()
 {
-	cl_switch_man lo_swm;
+	int li_end_time = go_switch_man.li_autooff;
+
 	g_start_time = g_loc_time; // set current time
 	g_end_time = g_loc_time;
 	g_end_time.tm_hour = gx_off[g_loc_time.tm_wday].substring(0, 2).toInt(); // calculate scheduled end time for today
@@ -119,7 +122,7 @@ void flipswitch()
 	gi_etime = mktime(&g_end_time);
 	gi_stime = mktime(&g_start_time);
 	gi_ettime = mktime(&g_loc_time);
-	if (gi_ettime > gi_stime && gi_ettime < gi_etime)
+	if (gi_ettime > gi_stime && gi_ettime < gi_etime || (gi_ettime < go_switch_man.li_autooff && go_switch_man.li_state == 1) )
 	{
 		gi_state = 1;             //on
 		digitalWrite(gpio, LOW);  //switch on
@@ -128,6 +131,7 @@ void flipswitch()
 	{
 		gi_state = 0;             // off 
 		digitalWrite(gpio, HIGH); // switch off
+		go_switch_man.set_offtime("0", "0");
 	}
 	if (gx_debug == "X")
 	{
@@ -214,8 +218,6 @@ void saveswitchtimes()
 void readswitchtimes()
 {
 	g_prefs.begin("switchtimes", false);
-	//	String lcx_on = "gx_on";
-	//	String lcx_off = "gx_off";
 	char lx_on[7];
 	char lx_off[8];
 	for (int ln_count = 0; ln_count < 7; ln_count++)
