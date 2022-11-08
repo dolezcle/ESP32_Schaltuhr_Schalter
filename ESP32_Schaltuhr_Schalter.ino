@@ -1,20 +1,26 @@
 /*********
 
- Webserver mit Eingabeformular,
- Initialisierung ueber lokales Netz ESP_ssid / ESP_pwd mit IP 192.168.4.1
- Die Zugangsdaten werden in das NVM geschrieben und koennen auf der Hauptseite zurueckgesetzt werden
+ Schaltuhr auf Tagesbasis mit manuellem Ein-/Ausschalter
+
+ Die Zugangsdaten werden in das NVM "ac_data" geschrieben und koennen (versteckt) auf der Hauptseite zurueckgesetzt werden
  Adresse: http://<gs_DHCPhostname>./
+ Setup: wenn keine Zugangsdaten uebergeben werden -->  lokalen Server mit Dialog zur Eingabe aufbauen (ESP_ssid / ESP_pwd mit IP 192.168.4.1)
  Die IP-Adresse wird im setup eingegeben, Port 80
- Der Schaltpin fuer das Relais ist gpio
+ 
  Credentials für das operative WLAN werden in NVE Namespace "ac_data" gespeichert
  Die Werte werden in NVE namespace "switchtimes" gespeichert
+
+ Der Schaltpin fuer das Relais ist gpio
+
+ cl_switch_man verwaltet den manuell geschalteten Zustand: ein/an mit Endezeit/aus
+ cl_conman verwaltet die Verbindungsdaten. Offen: Speichern der kompletten Verbindungsdaten einschl. host/ip, eigene NVM-Lesemethode  
 
 
  *********/
 #include <Arduino.h>
 #include <WiFi.h>
 #include <stdbool.h>
-//#include <cstdint>
+// #include <cstdint>
 #include <string>
 // #include <iostream>
 #include <esp_timer.h>
@@ -22,13 +28,13 @@
 #include <time.h>
 #include <Preferences.h>
 #include "cl_switch_man.h"
+#include "cl_conman.h"
 #include "g_vars.h"
 #include "gen_funcs.h"
 #include "ini_loop.h"
 #include "spec_funcs.h"
 
-
-//#include <ESPmDNS.h>                            //<---funktioniert nicht mit Android
+// #include <ESPmDNS.h>                            //<---funktioniert nicht mit Android
 
 WiFiServer pub_server(80); // Betrieb
 // IPAddress pub_staticIP(192, 168, 179, 20);        //LAN
@@ -39,15 +45,21 @@ void setup()
 	pinMode(gpio, OUTPUT);
 	Serial.begin(115200);
 	esp_efuse_read_mac(ga_chipid);
-	// nvs_flash_erase(); // erase the NVS partition and...
-	// nvs_flash_init();  // initialize the NVS partition.
+	// esp_read_mac(ga_chipid);
+	//  nvs_flash_erase(); // erase the NVS partition and...
+	//  nvs_flash_init();  // initialize the NVS partition.
 	digitalWrite(gpio, HIGH);
-	g_prefs.begin("ac_data", false);
+	if (gx_debug == "X")
+	{
+		go_con_man.m_save_test_creds();
+		delay(500);
+	}
+	g_prefs.begin("ac_data", true);
 	String ls_ssid_ini = g_prefs.getString("SSID", "");
 	String ls_password_ini = g_prefs.getString("PWD", ""); //<-----------------------------NVM initial GET zur Uebergabe an ini_loop
 	String ls_host = g_prefs.getString("gs_DHCPhostname", "");
 	String ls_myip = g_prefs.getString("gs_myip", "");
-	short li_fast_start = g_prefs.getShort("faststart", 0);
+	short li_fast_start = g_prefs.getShort("faststart", 0); // if gx_debug is set this will be set to 1 later
 	g_prefs.end();
 	Serial.print("g_prefs-SSID im setup ls_ssid_ini  vor ini_loop: ");
 	Serial.println(ls_ssid_ini);
@@ -57,10 +69,6 @@ void setup()
 	Serial.println(ls_host);
 	Serial.print("g_prefs-myip im setup ls_myip  vor ini_loop: ");
 	Serial.println(ls_myip);
-	if (gx_debug == "X")
-	{
-		delay(500);
-	}
 
 	WiFi.persistent(false);
 	Serial.print("Setting AP (Access Point): ");
@@ -68,8 +76,16 @@ void setup()
 	esp_server.begin();
 	Serial.print("esp_server im setup: ");
 	Serial.println(esp_server);
+	li_fast_start = go_con_man.m_scan_wlan();
+	ls_ssid_ini = go_con_man.lst_SSID;
+	ls_password_ini = go_con_man.lst_password;
 	if (gx_debug == "X")
 	{
+		Serial.print("------------------------------After WLAN scan-------------------------------");
+		Serial.println(li_fast_start);
+		Serial.println(ls_ssid_ini);
+		Serial.println(ls_password_ini);
+		Serial.println("------------------------------After WLAN scan End-------------------------------");
 		delay(500);
 	}
 
@@ -85,7 +101,7 @@ void setup()
 
 		g_prefs.putString("gs_DHCPhostname", gs_DHCPhostname);
 		g_prefs.putString("gs_myip", gs_myip);
-		g_prefs.putShort("faststart", 0);                         			   //set normal start mode
+		g_prefs.putShort("faststart", 0); // set normal start mode
 		Serial.print("g_prefs G E S E T Z T nach ini_loop. p_ssid: ");
 		Serial.print(p_ssid);
 		Serial.print(" p_password: ");
@@ -170,14 +186,16 @@ void setup()
 	if (WiFi.status() == WL_CONNECTED)
 	{
 		if (gx_debug == "X")
-		{
-			delay(500);
-		}
+
 		Serial.print("vor get_ntptime im setup ");
 		get_ntptime();
 		gs_myip = ipv42string(WiFi.localIP());
 		g_prefs.putString("gs_myip", gs_myip);
 		g_prefs.end();
+				{
+			Serial.println("IP " + gs_myip);
+			delay(500);
+		}
 		readswitchtimes();
 	}
 }
@@ -185,21 +203,27 @@ void setup()
 
 void loop()
 {
-	go_switch_man.initialize();
+	if (go_switch_man.lb_inidone == false)
+	{
+		Serial.print("go_switch_man.lb_inidone: ");
+		Serial.println(go_switch_man.lb_inidone);
+		delay(3000);
+		go_switch_man.initialize();
+	}
 	String l_inputval; //(Raw) Value of Range 0 or 1 (Off, On)
 	String lstr_autooff = "";
 	char la_autooff[10] = "X";
-	
+
 	if (gx_debug == "X")
 	{
 		Serial.println("Im Hauptloop");
 		delay(100);
 	}
-	
+
 	getLocalTime(&g_loc_time);
 	setenv("TZ", "CET-1CEST,M3.5.0/2,M10.5.0/3", 1); // scheint im setup() nicht zu reichen
 	gi_ettime = mktime(&g_loc_time);				 // lokale Zeit als int aus der ntp-Zeit
-	go_switch_man.initialize();
+													 //	go_switch_man.initialize();
 	if (WiFi.status() == WL_CONNECTED)
 	{
 		if (!pub_server)
@@ -240,7 +264,7 @@ void loop()
 	{
 		gi_etime = 0;
 	}
-	
+
 	if (gi_ettime > gi_etime && gi_etime > 0 && gpio_state == 1)
 	{
 		Serial.println("A U S G E S C H A L T E T");
@@ -272,7 +296,7 @@ void loop()
 	while (pub_client.connected())
 	{
 		Serial.print("im pub_client.connected ");
-		
+
 		gx_header = pub_client.readStringUntil('\n');
 		Serial.print("gx_header: ");
 		Serial.println(gx_header);
@@ -280,7 +304,8 @@ void loop()
 		{
 			delay(500);
 		}
-		if (gx_header.indexOf("GET /?on") > -1)		{
+		if (gx_header.indexOf("GET /?on") > -1)
+		{
 			// Serial.println(gx_header.indexOf("GET / HTTP/1.1"));
 			// delay(1000);
 
@@ -298,25 +323,37 @@ void loop()
 			gx_off[6] = get_substring(gx_header, "off6=", "&on0=", 0);
 			gx_on[0] = get_substring(gx_header, "on0=", "&off0=", 0);
 			gx_off[0] = get_substring(gx_header, "off0=", " HTTP", 0);
-		
-		for (int ln_count = 0; ln_count < 7; ln_count++)
+
+			for (int ln_count = 0; ln_count < 7; ln_count++)
+			{
+				gx_on[ln_count].replace("%3A", gc_col);
+				gx_off[ln_count].replace("%3A", gc_col);
+			}
+
+			saveswitchtimes();
+		}
+		if (gx_header.indexOf("?switch") > -1)
 		{
-			gx_on[ln_count].replace("%3A", gc_col);
-			gx_off[ln_count].replace("%3A", gc_col);
-		}
-
-		saveswitchtimes();
-		}
-		if (gx_header.indexOf("GET /?switch") > -1){
-			go_switch_man.set_offtime(get_substring(gx_header, "switch=", "&", 0), get_substring(gx_header, "ttl=", " HTTP", 0));
-
 			if (gx_debug == "X")
-		{Serial.print("Direktes Schalten: ");
-		
-		Serial.print("go_switch_man.li_autooff: ");
-		Serial.println(go_switch_man.li_autooff);
-		delay(1000);
-		}
+			{
+				Serial.print("start go_switch_man.set_offtime - Header: ");
+				Serial.println(gx_header);
+				delay(5000);
+			}
+			go_switch_man.set_offtime(get_substring(gx_header, "switch=", "&", 0), get_substring(gx_header, "ttl=", " HTTP", 0));
+			gi_state = go_switch_man.li_state;
+			if (gx_debug == "X")
+			{
+				Serial.print("Direktes Schalten: ");
+				Serial.print("-----debugging function: ");
+				Serial.println(__FUNCTION__);
+				Serial.print("go_switch_man.li_autooff: ");
+				Serial.println(go_switch_man.li_state);
+				Serial.print("go_switch_man.li_autooff: ");
+				Serial.println(go_switch_man.li_state);
+
+				delay(1000);
+			}
 		}
 
 		if (gx_debug == "X")
@@ -324,9 +361,15 @@ void loop()
 			Serial.println("Werte nach Lesen des GET <-------------------");
 			for (int ln_count = 0; ln_count < 7; ln_count++)
 			{
-			Serial.print("gx_off[xxx]: ");			
-			Serial.println(gx_off[ln_count]);			
+				Serial.print("gx_off[xxx]: ");
+				Serial.println(gx_off[ln_count]);
 			}
+			Serial.println("-----------------------------------------------");
+			Serial.print("go_switch_man.li_state: ");
+			Serial.println(go_switch_man.li_state);
+			Serial.print("go_switch_man.li_state: ");
+			Serial.println(go_switch_man.li_state);
+			Serial.println("-----------------------------------------------");
 		}
 		mainhtml1(pub_client, go_switch_man);
 

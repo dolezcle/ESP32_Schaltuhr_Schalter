@@ -1,5 +1,6 @@
 int ini_loop(String ip_ssid, String ip_password, String ip_host, String ip_myip, short ip_fast_start)
 {
+	//ip_fast_start = 1;                                            //Test
 	Serial.println("<------------------------------->");
 	// delay(5000);
 	Serial.print("Start ini_loop ");

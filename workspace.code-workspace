@@ -8,5 +8,9 @@
 			"path": "..\\..\\..\\..\\PlatformIO\\Projects\\220220-085819-esp32dev"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"files.associations": {
+			"string": "cpp"
+		}
+	}
 }
