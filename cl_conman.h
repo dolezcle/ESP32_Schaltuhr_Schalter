@@ -37,8 +37,7 @@ public:
     void m_save_creds()
     {
         lo_prefs.begin("ac_data", false);
-        lo_prefs.putString(lst_SSID.c_str(), lst_password);
-
+        lo_prefs.putString(lst_SSID.c_str(), lst_password);     
         lo_prefs.end();
     }
 
@@ -52,6 +51,14 @@ public:
         lo_prefs.putString("WLAN-318841", "");
         lo_prefs.end();
 */
+    }
+
+    void m_get_conn_data()
+    {
+
+    l_ip = WiFi.localIP();
+
+
     }
     void m_connect()
     {

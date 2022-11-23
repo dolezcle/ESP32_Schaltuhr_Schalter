@@ -4,6 +4,7 @@ String gx_header;
 long int gi_ttime;          // Laufzeit seit boot absolut (ini_loop)
 long int gi_ettime;         // Laufzeit seit boot in lokaler Zeit in sec gemaess ntp
 long int gi_etime;          // autooff als int in sec in lokaler Zeit gemaess ntp
+long int gi_nooff = 9999999;//no end time
 long int gi_stime;          // start time in int
 long int gi_autooff;        // autooff nach dem Lesen in ms
 struct tm g_loc_time;       // local time as tm

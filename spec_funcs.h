@@ -42,6 +42,8 @@ void mainhtml1(WiFiClient i_client, cl_switch_man lo_switch_man)
 	i_client.print("<br>Ausschalten in<input style='background-color:#FFFFE0' name='ttl' type='number' min='1' max='999' maxlength='3' size='3' autofocus>Minuten<br><br></p></form>");
 	i_client.print("<br><br><br>");
 	if ((gi_etime > 0 || lo_switch_man.li_etime > 0) && gi_state == 1)
+	if (gi_etime != lo_switch_man.li_nooff )                               //manually switched, no autooff
+	{}
 	{
 		i_client.println("<br> <div id='time'> Ausschalten am: ");
 		if (gi_etime > 0 && gi_etime < lo_switch_man.li_etime)
@@ -55,6 +57,7 @@ void mainhtml1(WiFiClient i_client, cl_switch_man lo_switch_man)
 		i_client.println(" um: ");
 		i_client.println(localtime(&lo_switch_man.li_etime), "%H:%M:%S");
 	}
+	{}
 	//							"%A, %B %d %Y %H:%M:%S");
 	i_client.print("</div>");
 

@@ -5,6 +5,7 @@ public:
 	tm ltm_local_time;
 	long int li_acttime; // actual local time in sec
 	long int li_etime;	 // absolute switchoff time in sec as local time
+	long int li_nooff = 9999999;//no end time
 	time_t lit_etime;
 	long int li_autooff; // autooff nach dem Lesen in ms
 	char la_autooff[10] = "";
@@ -62,6 +63,10 @@ public:
 				if (lit_etime)
 				{
 					ltm_end_time = localtime(&lit_etime);
+				}
+				else if (li_autooff == 0)
+				{
+					li_etime = li_nooff;
 				}
 			}
 		}
