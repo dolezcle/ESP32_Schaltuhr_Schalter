@@ -1,6 +1,7 @@
 class cl_conman
 {
 public:
+    const char *la_debug = "X";
     int li_count;
     int li_number;
     int li_maxlogon_tries = 50; // max tries to connect to WLAN -> reset if reached
@@ -13,7 +14,7 @@ public:
     WiFiServer lo_pub_server();
     Preferences lo_prefs;
 
-    short m_scan_wlan()
+    short m_scan_wlan()                     //returns 1 if no password
     {
         li_number = WiFi.scanNetworks();
         lo_prefs.begin("ac_data", true); // read only
@@ -32,12 +33,19 @@ public:
         // lst_DHCPhostname =
 
         lo_prefs.end();
+//        m_connect();
+    }
+
+    void m_set_conn_data(String i_SSID, String i_password)
+    {
+        lst_SSID = i_SSID;
+        lst_password = i_password;
     }
 
     void m_save_creds()
     {
         lo_prefs.begin("ac_data", false);
-        lo_prefs.putString(lst_SSID.c_str(), lst_password);     
+        lo_prefs.putString(lst_SSID.c_str(), lst_password);
         lo_prefs.end();
     }
 
@@ -56,20 +64,23 @@ public:
     void m_get_conn_data()
     {
 
-    l_ip = WiFi.localIP();
-
-
+        l_ip = WiFi.localIP();
     }
-    void m_connect()
+    int m_connect()                   //returns 4 if no connect
     {
         WiFi.mode(WIFI_STA);
         WiFi.begin(lst_SSID.c_str(), lst_password.c_str());
         while (WiFi.status() != WL_CONNECTED)
         {
             delay(500);
-            Serial.println("Mit WiFi verbinden im setup.. ");
-            Serial.println(lst_SSID.c_str());
-            Serial.println(lst_password.c_str());
+            if (la_debug == "X")
+            {
+                Serial.print("-----debugging function: ");
+                Serial.println(__FUNCTION__);
+                Serial.println("Mit WiFi verbinden im setup.. ");
+                Serial.println(lst_SSID.c_str());
+                Serial.println(lst_password.c_str());
+            }
             Serial.print("WiFi.status() ");
             switch (WiFi.status())
             {
@@ -96,8 +107,9 @@ public:
             // Serial.println(WiFi.status());
             if (li_maxlogon_tries < li_logon_tries)
             {
-                Serial.println("R E S T A R T ");
-                ESP.restart();
+                //                Serial.println("R E S T A R T ");
+                //                ESP.restart();
+                return 4;
             }
             li_logon_tries++;
         }
