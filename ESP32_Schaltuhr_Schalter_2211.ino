@@ -23,7 +23,7 @@
 #include <WiFi.h>
 #include <stdbool.h>
 // #include <cstdint>
-#include <string>
+//#include <string>    ?? 
 // #include <iostream>
 #include <esp_timer.h>
 #include <esp_wifi.h>
@@ -61,28 +61,11 @@ void setup()
 		go_con_man.m_save_test_creds();
 		delay(500);
 	}
-	/*
-	g_prefs.begin("ac_data", true);
-	String ls_ssid_ini = g_prefs.getString("SSID", "");
-	String ls_password_ini = g_prefs.getString("PWD", ""); //<-----------------------------NVM initial GET zur Uebergabe an ini_loop
-	String ls_host = g_prefs.getString("gs_DHCPhostname", "");
-	String ls_myip = g_prefs.getString("gs_myip", "");
-	short li_fast_start = g_prefs.getShort("faststart", 0); // if gx_debug is set this will be set to 1 later
-	g_prefs.end();
-	Serial.print("g_prefs-SSID im setup ls_ssid_ini  vor ini_loop: ");
-	Serial.println(ls_ssid_ini);
-	Serial.print("g_prefs-PWD im setup ls_password_ini  vor ini_loop: ");
-	Serial.println(ls_password_ini);
-	Serial.print("g_prefs-host im setup ls_host  vor ini_loop: ");
-	Serial.println(ls_host);
-	Serial.print("g_prefs-myip im setup ls_myip  vor ini_loop: ");
-	Serial.println(ls_myip);
-	*/
 	WiFi.persistent(false);
 	WiFi.mode(WIFI_STA);
 	WiFi.disconnect();
 
-	li_fast_start = go_con_man.m_scan_wlan();			//0; saved credentials found, 1: not found
+	li_fast_start = go_con_man.m_scan_wlan();			//0: saved credentials found, 1: not found
 	String ls_ssid_ini = go_con_man.lst_SSID;
 	String ls_password_ini = go_con_man.lst_password;
 	if (gx_debug == "X")
@@ -109,31 +92,10 @@ void setup()
 
 		esp_server.stop();
 	}
-	if (li_rc == 0)
-		/*
-		{ //<-----------------------------ok aus ini_loop
-			g_prefs.begin("ac_data", false);
-			g_prefs.putString("SSID", p_ssid); //<-----------------------------NVM put aus ini_loop
-			// g_prefs.putString("PWD", p_password);
-			g_prefs.putString("PWD", p_password);
+	//if (li_rc == 0)
+	
 
-			g_prefs.putString("gs_DHCPhostname", gs_DHCPhostname);
-			g_prefs.putString("gs_myip", gs_myip);
-			g_prefs.putShort("faststart", 0); // set normal start mode
-			Serial.print("g_prefs G E S E T Z T nach ini_loop. p_ssid: ");
-			Serial.print(p_ssid);
-			Serial.print(" p_password: ");
-			Serial.println(p_password);
-			Serial.print(" gs_DHCPhostname: ");
-			Serial.println(gs_DHCPhostname);
-			delay(1000);
-		}
-
-		String ls_ssid = g_prefs.getString("SSID", ""); //<-----------------------------NVM finaler get
-		String ls_password = g_prefs.getString("PWD", "");
-		gs_DHCPhostname = g_prefs.getString("gs_DHCPhostname", "");
-		*/
-		gs_myip = g_prefs.getString("gs_myip", "");
+	gs_myip = g_prefs.getString("gs_myip", "");
 	/*Serial.print("g_prefs Neu Gelesen, ls_ssid: ");
 	Serial.println(ls_ssid);
 	Serial.print("g_prefs Neu Gelesen, ls_password: ");
@@ -141,11 +103,12 @@ void setup()
 	Serial.print("g_prefs Neu Gelesen, gs_DHCPhostname: ");
 	Serial.println(gs_DHCPhostname);
 	*/
+if (li_connected > 0){
 	WiFi.disconnect(); //<---------------------------Netz ruecksetzen?
 	WiFi.mode(WIFI_OFF);
 	Serial.println("WIFI_OFF");
 	delay(1000);
-
+}
 	IPAddress ls_ip;
 	// IPAddress gateway(192, 168, 178, 1); // Wurmnetz
 	IPAddress subnet(255, 255, 255, 0);
@@ -165,50 +128,7 @@ void setup()
 	gs_ssid = go_con_man.lst_SSID;
 	gs_password = go_con_man.lst_password;
 	//go_con_man.m_set_conn_data(ls_ssid.c_str(), ls_password.c_str());
-	/*
-	//WiFi.setHostname(gs_DHCPhostname.c_str());
-	WiFi.mode(WIFI_STA);
-
-	WiFi.begin(ls_ssid.c_str(), ls_password.c_str()); //<-----------------------------WiFi START operativ mit gerade gelesenen Preferences
-
-	while (WiFi.status() != WL_CONNECTED)
-	{
-		delay(500);
-		Serial.println("Mit WiFi verbinden im setup.. ");
-		Serial.println(ls_ssid.c_str());
-		Serial.println(ls_password.c_str());
-		Serial.print("WiFi.status() ");
-		switch (WiFi.status())
-		{
-		case 1:
-			Serial.println("1 - No SSID (WL_NO_SSID_AVAIL)");
-			break;
-		case 3:
-			Serial.println("3 - Connected (WL_CONNECTED)");
-			break;
-		case 4:
-			Serial.println("4 - Connect failed (WL_CONNECT_FAILED)");
-			break;
-		case 5:
-			Serial.println("5 - Connection lost (WL_CONNECTION_LOST)");
-			break;
-		case 6:
-			Serial.println("6 - Disconnected (WL_DISCONNECTED)");
-			break;
-		default:
-			Serial.print("Other");
-			Serial.println(WiFi.status());
-			break;
-		}
-		// Serial.println(WiFi.status());
-		if (gi_maxlogon_tries < gi_logon_tries)
-		{
-			Serial.println("R E S T A R T ");
-			ESP.restart();
-		}
-		gi_logon_tries++;
-	}
-	*/
+	
 	if (WiFi.status() == WL_CONNECTED)
 	{
 		if (gx_debug == "X")

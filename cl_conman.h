@@ -66,7 +66,7 @@ public:
 
         l_ip = WiFi.localIP();
     }
-    int m_connect()                   //returns 4 if no connect
+    int m_connect()                   //returns 4 = not connected, 0 = connected
     {
         WiFi.mode(WIFI_STA);
         WiFi.begin(lst_SSID.c_str(), lst_password.c_str());
@@ -124,6 +124,7 @@ public:
                     gs_myip = ipv42string(WiFi.localIP());
                     lo_prefs.putString("gs_myip", gs_myip);
             */
+           return 0;
         }
     }
 };
