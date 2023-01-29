@@ -4,9 +4,8 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "C:\\Users\\Clemens_2\\Documents\\Arduino\\**",
-                "C:/Users/Clemens_2/Documents/Arduino/**",
-                "C:/Users/Clemens_2/Documents/ArduinoData/**"
+                "C:\\Users\\dolez\\ArduinoData\\packages\\esp32\\hardware\\esp32\\2.0.5\\cores\\esp32",
+                "C:/Users/dolez/esp/**"
             ],
             "defines": [
                 "_DEBUG",
