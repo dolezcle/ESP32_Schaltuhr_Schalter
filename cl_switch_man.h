@@ -3,16 +3,16 @@ class cl_switch_man
 public:
 	tm ltm_start_time;
 	tm ltm_local_time;
-	long int li_acttime; // actual local time in sec
-	long int li_etime;	 // absolute switchoff time in sec as local time
-	long int li_nooff = 9999999;//no end time
+	long int li_acttime;		 // actual local time in sec
+	long int li_etime;			 // absolute switchoff time in sec as local time
+	long int li_nooff = 9999999; // no end time
 	time_t lit_etime;
 	long int li_autooff; // autooff nach dem Lesen in ms
 	char la_autooff[10] = "";
 	char la_state[2]; // 0 - off, 1 - on from range in HTML control
 	const char *la_debug = "";
 	bool lb_inidone = false;
-	int li_state;
+	int li_state; // 0: manual off, 1: manual on
 	struct tm ltm_loc_time;
 	struct tm *ltm_end_time;
 
@@ -37,25 +37,27 @@ public:
 		Serial.print("-----debugging function: ");
 		if (la_debug == "X")
 		{
-		Serial.print("----i_lstr_autooff in Start cl_switch_man.set_offtime: ");
-		Serial.println(i_lstr_autooff);
-		Serial.print("i_lstr_state in Start cl_switch_man.set_offtime: ");
-		Serial.println(i_lstr_state);
-		delay(3000);
+			Serial.print("----i_lstr_autooff in Start cl_switch_man.set_offtime: ");
+			Serial.println(i_lstr_autooff);
+			Serial.print("i_lstr_state in Start cl_switch_man.set_offtime: ");
+			Serial.println(i_lstr_state);
+			delay(3000);
 		}
-			i_lstr_state.toCharArray(la_state, 2);
-			li_state = atoi(la_state);
-		if (i_lstr_autooff != "" )
+		i_lstr_state.toCharArray(la_state, 2);
+		li_state = atoi(la_state);
+		if (i_lstr_autooff != "")
 		{
 			i_lstr_state.toCharArray(la_state, 2);
 			li_state = atoi(la_state);
 			li_autooff = 0;
 			i_lstr_autooff.toCharArray(la_autooff, 4);
 			li_autooff = atoi(la_autooff);
-			if (li_autooff == 0){
-				li_autooff = 9999;
-			}
 			li_autooff = li_autooff * 60;
+			if (li_autooff == 0)
+			{
+				li_autooff = li_nooff;
+			}
+
 			if (li_autooff > 0 && li_state == 1)
 			{
 				li_etime = li_acttime + li_autooff;
@@ -64,25 +66,28 @@ public:
 				{
 					ltm_end_time = localtime(&lit_etime);
 				}
-				else if (li_autooff == 0)
-				{
-					li_etime = li_nooff;
-				}
+			}
+			else if (li_autooff == li_nooff)
+			{
+				li_etime = li_nooff;
 			}
 		}
-		 if (i_lstr_state == "0")
+		if (i_lstr_state == "0")
+		{
+			if (la_debug == "X")
 			{
 			Serial.print("-----debugging function: ");
 			Serial.println(__FUNCTION__);
 			Serial.print("i_lstr_state beim Ausschalten: ");
 			Serial.println(i_lstr_state);
-				li_etime = 0;
-				li_state = 0;
-				li_autooff = 0;
-				//			gi_etime = gi_ettime + 59940;             //switch off after 999 min
-				//			gi_etime = 0;                             //bei Anmelden eines neuen client darf nicht initialisiert werden
+			li_etime = 0;
+			li_state = 0;
+			li_autooff = 0;
 			}
-		
+			//			gi_etime = gi_ettime + 59940;             //switch off after 999 min
+			//			gi_etime = 0;                             //bei Anmelden eines neuen client darf nicht initialisiert werden
+		}
+
 		if (la_debug == "X")
 		{
 			Serial.println("------------------cl_switch_man.set_offtime: -----------------------");

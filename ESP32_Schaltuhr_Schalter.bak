@@ -6,14 +6,14 @@
  Adresse: http://<gs_DHCPhostname>./
  Setup: wenn keine Zugangsdaten uebergeben werden -->  lokalen Server mit Dialog zur Eingabe aufbauen (ESP_ssid / ESP_pwd mit IP 192.168.4.1)
  Die IP-Adresse wird im setup eingegeben, Port 80
-
+ 
  Credentials für das operative WLAN werden in NVE Namespace "ac_data" gespeichert
  Die Werte werden in NVE namespace "switchtimes" gespeichert
 
  Der Schaltpin fuer das Relais ist gpio
 
  cl_switch_man verwaltet den manuell geschalteten Zustand: ein/an mit Endezeit/aus
- cl_conman verwaltet die Verbindungsdaten. Offen: Speichern der kompletten Verbindungsdaten einschl. host/ip, eigene NVM-Lesemethode
+ cl_conman verwaltet die Verbindungsdaten. Offen: Speichern der kompletten Verbindungsdaten einschl. host/ip, eigene NVM-Lesemethode  
 
 
  *********/
@@ -44,68 +44,75 @@ void setup()
 {
 	pinMode(gpio, OUTPUT);
 	Serial.begin(115200);
-	// esp_efuse_read_mac(ga_chipid);
-	//  esp_read_mac(ga_chipid);
-	//   nvs_flash_erase(); // erase the NVS partition and...
-	//   nvs_flash_init();  // initialize the NVS partition.
+	//esp_efuse_read_mac(ga_chipid);
+	// esp_read_mac(ga_chipid);
+	//  nvs_flash_erase(); // erase the NVS partition and...
+	//  nvs_flash_init();  // initialize the NVS partition.
 	digitalWrite(gpio, HIGH);
 	if (gx_debug == "X")
 	{
 		go_con_man.m_save_test_creds();
 		delay(500);
 	}
+	g_prefs.begin("ac_data", true);
+	String ls_ssid_ini = g_prefs.getString("SSID", "");
+	String ls_password_ini = g_prefs.getString("PWD", ""); //<-----------------------------NVM initial GET zur Uebergabe an ini_loop
+	String ls_host = g_prefs.getString("gs_DHCPhostname", "");
+	String ls_myip = g_prefs.getString("gs_myip", "");
+	short li_fast_start = g_prefs.getShort("faststart", 0); // if gx_debug is set this will be set to 1 later
+	g_prefs.end();
+	Serial.print("g_prefs-SSID im setup ls_ssid_ini  vor ini_loop: ");
+	Serial.println(ls_ssid_ini);
+	Serial.print("g_prefs-PWD im setup ls_password_ini  vor ini_loop: ");
+	Serial.println(ls_password_ini);
+	Serial.print("g_prefs-host im setup ls_host  vor ini_loop: ");
+	Serial.println(ls_host);
+	Serial.print("g_prefs-myip im setup ls_myip  vor ini_loop: ");
+	Serial.println(ls_myip);
 
-	go_con_man.m_scan_wlan();
-	go_con_man.m_connect();
-	short li_fast_start = go_con_man.m_get_conn_data();
-	if (li_fast_start < 4)
+	WiFi.persistent(false);
+	Serial.print("Setting AP (Access Point): ");
+	WiFi.softAP(ESP_ssid, ESP_pwd);
+	esp_server.begin();
+	Serial.print("esp_server im setup: ");
+	Serial.println(esp_server);
+	li_fast_start = go_con_man.m_scan_wlan();
+	ls_ssid_ini = go_con_man.lst_SSID;
+	ls_password_ini = go_con_man.lst_password;
+	if (gx_debug == "X")
 	{
-		Serial.print("go_con_man.lst_SSID im setup ls_ssid_ini  vor ini_loop: ");
-		Serial.println(go_con_man.lst_SSID);
-		Serial.print("go_con_man.lst_password im setup ls_password_ini  vor ini_loop: ");
-		Serial.println(go_con_man.lst_password);
-		Serial.print("go_con_man.l_ip vor ini_loop: ");
-		Serial.println(go_con_man.l_ip);   
-//		Serial.print("g_prefs-host im setup ls_host  vor ini_loop: ");
-//		Serial.println(ls_host);
-//		Serial.print("g_prefs-myip im setup ls_myip  vor ini_loop: ");
-//		Serial.println(ls_myip);
+		Serial.print("------------------------------After WLAN scan-------------------------------");
+		Serial.println(li_fast_start);
+		Serial.println(ls_ssid_ini);
+		Serial.println(ls_password_ini);
+		Serial.println("------------------------------After WLAN scan End-------------------------------");
+		delay(500);
 	}
-	else
-	{
-		WiFi.persistent(false);
-		Serial.print("Setting AP (Access Point): ");
-		WiFi.softAP(ESP_ssid, ESP_pwd);
-		esp_server.begin();
-		Serial.print("esp_server im setup: ");
-		Serial.println(esp_server);
 
-		String ls_host;
-		String ls_myip;
-		int li_rc = ini_loop(go_con_man.lst_SSID, go_con_man.lst_SSID, ls_host, ls_myip, li_fast_start); //<-----------------------------ini_loop
+	int li_rc = ini_loop(ls_ssid_ini, ls_password_ini, ls_host, ls_myip, li_fast_start); //<-----------------------------ini_loop
 
-		esp_server.stop();
-		if (li_rc == 0)
-		{ //<-----------------------------ok aus ini_loop
-		    go_con_man.lst_SSID = p_ssid;
-			go_con_man.lst_password = p_password;
-			go_con_man.m_save_creds();
+	esp_server.stop();
+	if (li_rc == 0)
+	{ //<-----------------------------ok aus ini_loop
+		g_prefs.begin("ac_data", false);
+		g_prefs.putString("SSID", p_ssid); //<-----------------------------NVM put aus ini_loop
+		// g_prefs.putString("PWD", p_password);
+		g_prefs.putString("PWD", p_password);
 
-			g_prefs.putString("gs_DHCPhostname", gs_DHCPhostname);
-			g_prefs.putString("gs_myip", gs_myip);
-			g_prefs.putShort("faststart", 0); // set normal start mode
-			Serial.print("g_prefs G E S E T Z T nach ini_loop. go_con_man.lst_SSID: ");
-			Serial.print(go_con_man.lst_SSID);
-			Serial.print(" go_con_man.lst_password: ");
-			Serial.println(go_con_man.lst_password);
-			Serial.print(" gs_DHCPhostname: ");
-			Serial.println(gs_DHCPhostname);
-			delay(1000);
-		}
+		g_prefs.putString("gs_DHCPhostname", gs_DHCPhostname);
+		g_prefs.putString("gs_myip", gs_myip);
+		g_prefs.putShort("faststart", 0); // set normal start mode
+		Serial.print("g_prefs G E S E T Z T nach ini_loop. p_ssid: ");
+		Serial.print(p_ssid);
+		Serial.print(" p_password: ");
+		Serial.println(p_password);
+		Serial.print(" gs_DHCPhostname: ");
+		Serial.println(gs_DHCPhostname);
+		delay(1000);
 	}
-	
-	String ls_ssid = go_con_man.lst_SSID; //<-----------------------------NVM finaler get
-	String ls_password = go_con_man.lst_password;
+
+	String ls_ssid = g_prefs.getString("SSID", ""); //<-----------------------------NVM finaler get
+	String ls_password = g_prefs.getString("PWD", "");
 	gs_DHCPhostname = g_prefs.getString("gs_DHCPhostname", "");
 	gs_myip = g_prefs.getString("gs_myip", "");
 	Serial.print("g_prefs Neu Gelesen, ls_ssid: ");
@@ -131,7 +138,7 @@ void setup()
 	{
 		ls_ip = INADDR_NONE;
 	}
-	//WiFi.config(ls_ip, gateway, subnet); //<-----------------------------Config
+	WiFi.config(ls_ip, gateway, subnet); //<-----------------------------Config
 	// WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
 	//	MDNS.begin(gs_DHCPhostname.c_str());
 	WiFi.setHostname(gs_DHCPhostname.c_str());
@@ -180,12 +187,12 @@ void setup()
 	{
 		if (gx_debug == "X")
 
-			Serial.print("vor get_ntptime im setup ");
+		Serial.print("vor get_ntptime im setup ");
 		get_ntptime();
 		gs_myip = ipv42string(WiFi.localIP());
 		g_prefs.putString("gs_myip", gs_myip);
 		g_prefs.end();
-		{
+				{
 			Serial.println("IP " + gs_myip);
 			delay(500);
 		}

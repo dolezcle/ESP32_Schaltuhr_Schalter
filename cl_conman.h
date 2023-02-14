@@ -1,6 +1,7 @@
 class cl_conman
 {
 public:
+    const char *la_debug = "";
     int li_count;
     int li_number;
     int li_maxlogon_tries = 50; // max tries to connect to WLAN -> reset if reached
@@ -12,11 +13,12 @@ public:
     IPAddress l_ip;
     WiFiServer lo_pub_server();
     Preferences lo_prefs;
+    const char *Pref_con = "ac_data";
 
     short m_scan_wlan()
     {
         li_number = WiFi.scanNetworks();
-        lo_prefs.begin("ac_data", true); // read only
+        lo_prefs.begin(Pref_con, true); // read only
         for (int li_count = 0; li_count < li_number; ++li_count)
         {
             lst_SSID = WiFi.SSID(li_count);
@@ -26,6 +28,7 @@ public:
 
             if (lst_password != "?")
             {
+                lo_prefs.end();
                 return 1;
             }
         }
@@ -36,29 +39,31 @@ public:
 
     void m_save_creds()
     {
-        lo_prefs.begin("ac_data", false);
-        lo_prefs.putString(lst_SSID.c_str(), lst_password);     
+        lo_prefs.begin(Pref_con, false);
+        lo_prefs.putString(lst_SSID.c_str(), lst_password);
         lo_prefs.end();
     }
 
     void m_save_test_creds()
     {
         /*
-        lo_prefs.begin("ac_data", false);
+        lo_prefs.begin(Pref_con, false);
         lo_prefs.putString("Wurmnetz", "");
         lo_prefs.end();
-        lo_prefs.begin("ac_data", false);
+        lo_prefs.begin(Pref_con, false);
         lo_prefs.putString("WLAN-318841", "");
         lo_prefs.end();
 */
     }
 
-    void m_get_conn_data()
+    short m_get_conn_data()
     {
-
-    l_ip = WiFi.localIP();
-
-
+        if (WiFi.status() == WL_CONNECTED) {
+        l_ip = WiFi.localIP();
+        }
+        else{
+            return 4;
+        }
     }
     void m_connect()
     {
@@ -67,9 +72,12 @@ public:
         while (WiFi.status() != WL_CONNECTED)
         {
             delay(500);
-            Serial.println("Mit WiFi verbinden im setup.. ");
-            Serial.println(lst_SSID.c_str());
-            Serial.println(lst_password.c_str());
+            if (la_debug == "X")
+            {
+                Serial.println("Mit WiFi verbinden im setup.. ");
+                Serial.println(lst_SSID.c_str());
+                Serial.println(lst_password.c_str());
+            }
             Serial.print("WiFi.status() ");
             switch (WiFi.status())
             {
