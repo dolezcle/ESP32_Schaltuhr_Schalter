@@ -3,7 +3,7 @@ class cl_conman
 {
 public:
     const char *la_debug = "X";
-    const char *la_debug = "X";
+    
     int li_count;
     int li_number;
     int li_maxlogon_tries = 50; // max tries to connect to WLAN -> reset if reached
