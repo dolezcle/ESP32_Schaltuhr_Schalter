@@ -19,6 +19,7 @@
  *********/
 #include <Arduino.h>
 #include <WiFi.h>
+// #include <WiFiServer.h>
 #include <stdbool.h>
 // #include <cstdint>
 #include <string>
@@ -28,12 +29,13 @@
 #include <time.h>
 #include <Preferences.h>
 #include "cl_switch_man.h"
-#include "cl_conman.h"
+
 #include "g_vars.h"
 #include "gen_funcs.h"
+#include "cl_conman.h"
 #include "ini_loop.h"
 #include "spec_funcs.h"
-
+cl_conman go_con_man;
 // #include <ESPmDNS.h>                            //<---funktioniert nicht mit Android
 
 WiFiServer pub_server(80); // Betrieb
@@ -42,6 +44,9 @@ WiFiServer pub_server(80); // Betrieb
 
 void setup()
 {
+	Serial.print("Start: ");
+	Serial.println();
+	delay(10000);
 	pinMode(gpio, OUTPUT);
 	Serial.begin(115200);
 	// esp_efuse_read_mac(ga_chipid);
@@ -49,14 +54,19 @@ void setup()
 	//   nvs_flash_erase(); // erase the NVS partition and...
 	//   nvs_flash_init();  // initialize the NVS partition.
 	digitalWrite(gpio, HIGH);
-	if (gx_debug == "X")
+	if (gx_debug == "Y")
 	{
 		go_con_man.m_save_test_creds();
 		delay(500);
 	}
-
-	go_con_man.m_scan_wlan();
-	go_con_man.m_connect();
+	Serial.println("Vor m_scan_wlan.. ");
+	short li_creds_found = go_con_man.m_scan_wlan();
+	if (li_creds_found == 0)
+	{
+		Serial.println("Vor m_connect.. ");
+		delay(5000);
+		go_con_man.m_connect();
+	}
 	short li_fast_start = go_con_man.m_get_conn_data();
 	if (li_fast_start < 4)
 	{
@@ -65,11 +75,11 @@ void setup()
 		Serial.print("go_con_man.lst_password im setup ls_password_ini  vor ini_loop: ");
 		Serial.println(go_con_man.lst_password);
 		Serial.print("go_con_man.l_ip vor ini_loop: ");
-		Serial.println(go_con_man.l_ip);   
-//		Serial.print("g_prefs-host im setup ls_host  vor ini_loop: ");
-//		Serial.println(ls_host);
-//		Serial.print("g_prefs-myip im setup ls_myip  vor ini_loop: ");
-//		Serial.println(ls_myip);
+		Serial.println(go_con_man.l_ip);
+		//		Serial.print("g_prefs-host im setup ls_host  vor ini_loop: ");
+		//		Serial.println(ls_host);
+		//		Serial.print("g_prefs-myip im setup ls_myip  vor ini_loop: ");
+		//		Serial.println(ls_myip);
 	}
 	else
 	{
@@ -87,7 +97,7 @@ void setup()
 		esp_server.stop();
 		if (li_rc == 0)
 		{ //<-----------------------------ok aus ini_loop
-		    go_con_man.lst_SSID = p_ssid;
+			go_con_man.lst_SSID = p_ssid;
 			go_con_man.lst_password = p_password;
 			go_con_man.m_save_creds();
 
@@ -103,7 +113,7 @@ void setup()
 			delay(1000);
 		}
 	}
-	
+
 	String ls_ssid = go_con_man.lst_SSID; //<-----------------------------NVM finaler get
 	String ls_password = go_con_man.lst_password;
 	gs_DHCPhostname = g_prefs.getString("gs_DHCPhostname", "");
@@ -131,8 +141,8 @@ void setup()
 	{
 		ls_ip = INADDR_NONE;
 	}
-	//WiFi.config(ls_ip, gateway, subnet); //<-----------------------------Config
-	// WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
+	// WiFi.config(ls_ip, gateway, subnet); //<-----------------------------Config
+	//  WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
 	//	MDNS.begin(gs_DHCPhostname.c_str());
 	WiFi.setHostname(gs_DHCPhostname.c_str());
 	WiFi.mode(WIFI_STA);
@@ -196,6 +206,7 @@ void setup()
 
 void loop()
 {
+
 	if (go_switch_man.lb_inidone == false)
 	{
 		Serial.print("go_switch_man.lb_inidone: ");
