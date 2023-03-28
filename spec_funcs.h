@@ -41,7 +41,11 @@ void mainhtml1(WiFiClient i_client, cl_switch_man lo_switch_man)
 	i_client.print("'><span style ='color:red;'>&nbsp;An</span>");
 	i_client.print("<br>Ausschalten in<input style='background-color:#FFFFE0' name='ttl' type='number' min='1' max='999' maxlength='3' size='3' autofocus>Minuten<br><br></p></form>");
 	i_client.print("<br><br><br>");
+<<<<<<< HEAD
 
+=======
+    // -------------------------------------------------Display switchoff time
+>>>>>>> 79d8d3f23a5a0ee915813dcb758a688aef72405a
 	// timer:gi_etime is set && manual state not set OR manual end time set and status = on
 	if (((gi_etime > 0 && lo_switch_man.li_state == 0) || (lo_switch_man.li_etime > 0) && lo_switch_man.li_etime != lo_switch_man.li_nooff) && gi_state == 1)
 	{
@@ -126,12 +130,6 @@ void mainhtml1(WiFiClient i_client, cl_switch_man lo_switch_man)
 
 void flipswitch()
 {
-	int li_end_time = go_switch_man.li_autooff;
-	//    if (go_switch_man.li_autooff > 0) {
-	//		Serial.println("flipswitch - go_switch_man.li_autooff: ");
-	//				Serial.println(go_switch_man.li_autooff);
-	//				delay(3000);
-	//	}
 	g_start_time = g_loc_time; // set current time
 	g_end_time = g_loc_time;
 	g_end_time.tm_hour = gx_off[g_loc_time.tm_wday].substring(0, 2).toInt(); // calculate scheduled end time for today
@@ -144,7 +142,7 @@ void flipswitch()
 	gi_etime = mktime(&g_end_time);
 	gi_stime = mktime(&g_start_time);
 	gi_ettime = mktime(&g_loc_time);
-	// timer: act time > start time AND act time < end time OR act time < manual end AND state is ON --> switch on
+	// timer: act time > start time AND act time < end time OR act time < manual end AND manuall state is ON --> switch on
 	if (gi_ettime > gi_stime && gi_ettime < gi_etime || (gi_ettime < go_switch_man.li_etime && go_switch_man.li_state == 1))
 	{
 		gi_state = 1;			 // on
@@ -186,12 +184,13 @@ void flipswitch()
 		String lstr_temp_state;
 		lstr_temp_state = gi_state;
 		go_switch_man.set_offtime("0", lstr_temp_state);
-		Serial.println(__FUNCTION__);
+		if (gx_debug == "X"){
 		Serial.print("lstr_temp_state: ");
 		Serial.println(lstr_temp_state);
 		Serial.print("gi_state switch off: ");
 		Serial.println(gi_state);
 		delay(1000);
+		}
 	}
 
 	if (gx_debug == "X")

@@ -35,6 +35,7 @@ public:
 		getLocalTime(&ltm_loc_time);
 		li_acttime = mktime(&ltm_loc_time); // local time as int from ntp-time
 		Serial.print("-----debugging function: ");
+		Serial.println(__FUNCTION__);
 		if (la_debug == "X")
 		{
 			Serial.print("----i_lstr_autooff in Start cl_switch_man.set_offtime: ");
@@ -42,7 +43,15 @@ public:
 			Serial.print("i_lstr_state in Start cl_switch_man.set_offtime: ");
 			Serial.println(i_lstr_state);
 			delay(3000);
+			Serial.print("----i_lstr_autooff in Start cl_switch_man.set_offtime: ");
+			Serial.println(i_lstr_autooff);
+			Serial.print("i_lstr_state in Start cl_switch_man.set_offtime: ");
+			Serial.println(i_lstr_state);
+			delay(3000);
 		}
+		i_lstr_state.toCharArray(la_state, 2);
+		li_state = atoi(la_state);
+		if (i_lstr_autooff != "")
 		i_lstr_state.toCharArray(la_state, 2);
 		li_state = atoi(la_state);
 		if (i_lstr_autooff != "")
@@ -58,6 +67,11 @@ public:
 				li_autooff = li_nooff;
 			}
 
+			if (li_autooff == 0)
+			{
+				li_autooff = li_nooff;
+			}
+
 			if (li_autooff > 0 && li_state == 1)
 			{
 				li_etime = li_acttime + li_autooff;
@@ -66,6 +80,15 @@ public:
 				{
 					ltm_end_time = localtime(&lit_etime);
 				}
+			}
+			else if (li_autooff == li_nooff)
+			{
+				li_etime = li_nooff;
+			}
+		}
+		if (i_lstr_state == "0")
+		{
+			if (la_debug == "X")
 			}
 			else if (li_autooff == li_nooff)
 			{

@@ -1,4 +1,4 @@
-const char *gx_debug = "X";
+const char *gx_debug = "X";  //S-Set Preferences for WLAN
 String gx_header;
 
 long int gi_ttime;          // Laufzeit seit boot absolut (ini_loop)

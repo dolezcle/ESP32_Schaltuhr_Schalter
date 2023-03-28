@@ -3,6 +3,7 @@ class cl_conman
 {
 public:
     const char *la_debug = "X";
+    const char *la_debug = "X";
     int li_count;
     int li_number;
     int li_maxlogon_tries = 50; // max tries to connect to WLAN -> reset if reached
@@ -22,7 +23,7 @@ public:
     Preferences lo_prefs;
     const char *Pref_con = "ac_data";
 
-    short m_scan_wlan()
+    short m_scan_wlan()                     //returns 1 if no password
     {
         li_number = WiFi.scanNetworks();
         lo_prefs.begin(Pref_con, true); // read only
@@ -50,8 +51,8 @@ public:
 
     void m_save_creds()
     {
-        lo_prefs.begin(Pref_con, false);
-        lo_prefs.putString(lst_SSID.c_str(), lst_password);
+        lo_prefs.begin("ac_data", false);
+        lo_prefs.putString(lst_SSID.c_str(), lst_password);     
         lo_prefs.end();
     }
 
@@ -69,16 +70,12 @@ public:
 
     short m_get_conn_data()
     {
-        if (WiFi.status() == WL_CONNECTED)
-        {
-            l_ip = WiFi.localIP();
-        }
-        else
-        {
-            return 4;
-        }
+
+    l_ip = WiFi.localIP();
+
+
     }
-    void m_connect()
+    int m_connect()                   //returns 4 = not connected, 0 = connected
     {
         WiFi.mode(WIFI_STA);
          Serial.println("vor WIFI Setup...");
@@ -86,12 +83,9 @@ public:
         while (WiFi.status() != WL_CONNECTED)
         {
             delay(500);
-//            if (la_debug == "X")
-            {
-                Serial.println("Mit WiFi verbinden im setup.. ");
-                Serial.println(lst_SSID.c_str());
-                Serial.println(lst_password.c_str());
-            }
+            Serial.println("Mit WiFi verbinden im setup.. ");
+            Serial.println(lst_SSID.c_str());
+            Serial.println(lst_password.c_str());
             Serial.print("WiFi.status() ");
             switch (WiFi.status())
             {
@@ -118,8 +112,9 @@ public:
             // Serial.println(WiFi.status());
             if (li_maxlogon_tries < li_logon_tries)
             {
-                Serial.println("R E S T A R T ");
-                ESP.restart();
+                //                Serial.println("R E S T A R T ");
+                //                ESP.restart();
+                return 4;
             }
             li_logon_tries++;
         }
@@ -134,6 +129,7 @@ public:
                     gs_myip = ipv42string(WiFi.localIP());
                     lo_prefs.putString("gs_myip", gs_myip);
             */
+           return 0;
         }
     }
 

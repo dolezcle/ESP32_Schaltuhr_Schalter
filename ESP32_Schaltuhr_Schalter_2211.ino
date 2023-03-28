@@ -1,3 +1,5 @@
+#include <dummy.h>
+
 /*********
 
  Schaltuhr auf Tagesbasis mit manuellem Ein-/Ausschalter
@@ -19,23 +21,21 @@
  *********/
 #include <Arduino.h>
 #include <WiFi.h>
-// #include <WiFiServer.h>
 #include <stdbool.h>
 // #include <cstdint>
-#include <string>
+//#include <string>    ?? 
 // #include <iostream>
 #include <esp_timer.h>
 #include <esp_wifi.h>
 #include <time.h>
 #include <Preferences.h>
 #include "cl_switch_man.h"
-
+#include "cl_conman.h"
 #include "g_vars.h"
 #include "gen_funcs.h"
-#include "cl_conman.h"
 #include "ini_loop.h"
 #include "spec_funcs.h"
-cl_conman go_con_man;
+
 // #include <ESPmDNS.h>                            //<---funktioniert nicht mit Android
 
 WiFiServer pub_server(80); // Betrieb
@@ -44,93 +44,73 @@ WiFiServer pub_server(80); // Betrieb
 
 void setup()
 {
-	Serial.print("Start: ");
-	Serial.println();
-	delay(10000);
+	short li_fast_start;
+	int li_connected;
+	int li_rc;
+	String ls_host;
+	String ls_myip;
 	pinMode(gpio, OUTPUT);
 	Serial.begin(115200);
-	// esp_efuse_read_mac(ga_chipid);
-	//  esp_read_mac(ga_chipid);
-	//   nvs_flash_erase(); // erase the NVS partition and...
-	//   nvs_flash_init();  // initialize the NVS partition.
+	esp_efuse_read_mac(ga_chipid);
+	// esp_read_mac(ga_chipid);
+	//  nvs_flash_erase(); // erase the NVS partition and...
+	//  nvs_flash_init();  // initialize the NVS partition.
 	digitalWrite(gpio, HIGH);
-	if (gx_debug == "Y")
+	if (gx_debug == "S")
 	{
 		go_con_man.m_save_test_creds();
 		delay(500);
 	}
-	Serial.println("Vor m_scan_wlan.. ");
-	short li_creds_found = go_con_man.m_scan_wlan();
-	if (li_creds_found == 0)
+	WiFi.persistent(false);
+	WiFi.mode(WIFI_STA);
+	WiFi.disconnect();
+
+	li_fast_start = go_con_man.m_scan_wlan();			//0: saved credentials found, 1: not found
+	String ls_ssid_ini = go_con_man.lst_SSID;
+	String ls_password_ini = go_con_man.lst_password;
+	if (gx_debug == "X")
 	{
-		Serial.println("Vor m_connect.. ");
-		delay(5000);
-		go_con_man.m_connect();
+		Serial.print("------------------------------After WLAN scan-------------------------------");
+		Serial.println(li_fast_start);
+		Serial.println(ls_ssid_ini);
+		Serial.println(ls_password_ini);
+		Serial.println("------------------------------After WLAN scan End-------------------------------");
+		delay(500);
 	}
-	short li_fast_start = go_con_man.m_get_conn_data();
-	if (li_fast_start < 4)
+	if (li_fast_start == 0)
 	{
-		Serial.print("go_con_man.lst_SSID im setup ls_ssid_ini  vor ini_loop: ");
-		Serial.println(go_con_man.lst_SSID);
-		Serial.print("go_con_man.lst_password im setup ls_password_ini  vor ini_loop: ");
-		Serial.println(go_con_man.lst_password);
-		Serial.print("go_con_man.l_ip vor ini_loop: ");
-		Serial.println(go_con_man.l_ip);
-		//		Serial.print("g_prefs-host im setup ls_host  vor ini_loop: ");
-		//		Serial.println(ls_host);
-		//		Serial.print("g_prefs-myip im setup ls_myip  vor ini_loop: ");
-		//		Serial.println(ls_myip);
+	 li_connected = go_con_man.m_connect();
 	}
 	else
 	{
-		WiFi.persistent(false);
 		Serial.print("Setting AP (Access Point): ");
 		WiFi.softAP(ESP_ssid, ESP_pwd);
 		esp_server.begin();
 		Serial.print("esp_server im setup: ");
 		Serial.println(esp_server);
-
-		String ls_host;
-		String ls_myip;
-		int li_rc = ini_loop(go_con_man.lst_SSID, go_con_man.lst_SSID, ls_host, ls_myip, li_fast_start); //<-----------------------------ini_loop
+		li_rc = ini_loop(ls_ssid_ini, ls_password_ini, ls_host, ls_myip, li_fast_start); //<-----------------------------ini_loop
 
 		esp_server.stop();
-		if (li_rc == 0)
-		{ //<-----------------------------ok aus ini_loop
-			go_con_man.lst_SSID = p_ssid;
-			go_con_man.lst_password = p_password;
-			go_con_man.m_save_creds();
-
-			g_prefs.putString("gs_DHCPhostname", gs_DHCPhostname);
-			g_prefs.putString("gs_myip", gs_myip);
-			g_prefs.putShort("faststart", 0); // set normal start mode
-			Serial.print("g_prefs G E S E T Z T nach ini_loop. go_con_man.lst_SSID: ");
-			Serial.print(go_con_man.lst_SSID);
-			Serial.print(" go_con_man.lst_password: ");
-			Serial.println(go_con_man.lst_password);
-			Serial.print(" gs_DHCPhostname: ");
-			Serial.println(gs_DHCPhostname);
-			delay(1000);
-		}
 	}
+	//if (li_rc == 0)
+	
 
-	String ls_ssid = go_con_man.lst_SSID; //<-----------------------------NVM finaler get
-	String ls_password = go_con_man.lst_password;
-	gs_DHCPhostname = g_prefs.getString("gs_DHCPhostname", "");
 	gs_myip = g_prefs.getString("gs_myip", "");
-	Serial.print("g_prefs Neu Gelesen, ls_ssid: ");
+	/*Serial.print("g_prefs Neu Gelesen, ls_ssid: ");
 	Serial.println(ls_ssid);
 	Serial.print("g_prefs Neu Gelesen, ls_password: ");
 	Serial.println(ls_password);
 	Serial.print("g_prefs Neu Gelesen, gs_DHCPhostname: ");
 	Serial.println(gs_DHCPhostname);
+	*/
+if (li_connected > 0){
 	WiFi.disconnect(); //<---------------------------Netz ruecksetzen?
 	WiFi.mode(WIFI_OFF);
 	Serial.println("WIFI_OFF");
 	delay(1000);
-
+}
 	IPAddress ls_ip;
-	IPAddress gateway(192, 168, 178, 1); // Wurmnetz
+	// IPAddress gateway(192, 168, 178, 1); // Wurmnetz
 	IPAddress subnet(255, 255, 255, 0);
 	int li_indexfr;
 	int li_indextt = gs_myip.indexOf(0, '.');
@@ -144,48 +124,11 @@ void setup()
 	// WiFi.config(ls_ip, gateway, subnet); //<-----------------------------Config
 	//  WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
 	//	MDNS.begin(gs_DHCPhostname.c_str());
-	WiFi.setHostname(gs_DHCPhostname.c_str());
-	WiFi.mode(WIFI_STA);
-	WiFi.begin(ls_ssid.c_str(), ls_password.c_str()); //<-----------------------------WiFi START operativ mit gerade gelesenen Preferences
-	gs_ssid = ls_ssid;
-	gs_password = ls_password;
-	while (WiFi.status() != WL_CONNECTED)
-	{
-		delay(500);
-		Serial.println("Mit WiFi verbinden im setup.. ");
-		Serial.println(ls_ssid.c_str());
-		Serial.println(ls_password.c_str());
-		Serial.print("WiFi.status() ");
-		switch (WiFi.status())
-		{
-		case 1:
-			Serial.println("1 - No SSID (WL_NO_SSID_AVAIL)");
-			break;
-		case 3:
-			Serial.println("3 - Connected (WL_CONNECTED)");
-			break;
-		case 4:
-			Serial.println("4 - Connect failed (WL_CONNECT_FAILED)");
-			break;
-		case 5:
-			Serial.println("5 - Connection lost (WL_CONNECTION_LOST)");
-			break;
-		case 6:
-			Serial.println("6 - Disconnected (WL_DISCONNECTED)");
-			break;
-		default:
-			Serial.print("Other");
-			Serial.println(WiFi.status());
-			break;
-		}
-		// Serial.println(WiFi.status());
-		if (gi_maxlogon_tries < gi_logon_tries)
-		{
-			Serial.println("R E S T A R T ");
-			ESP.restart();
-		}
-		gi_logon_tries++;
-	}
+	
+	gs_ssid = go_con_man.lst_SSID;
+	gs_password = go_con_man.lst_password;
+	//go_con_man.m_set_conn_data(ls_ssid.c_str(), ls_password.c_str());
+	
 	if (WiFi.status() == WL_CONNECTED)
 	{
 		if (gx_debug == "X")
@@ -206,7 +149,6 @@ void setup()
 
 void loop()
 {
-
 	if (go_switch_man.lb_inidone == false)
 	{
 		Serial.print("go_switch_man.lb_inidone: ");
