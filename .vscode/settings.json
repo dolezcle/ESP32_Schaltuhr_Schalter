@@ -27,4 +27,5 @@
         "xutility": "cpp",
         "xxatomic": "cpp"
     }
+    "arduino.path": "C:\Arduino_IDE\Arduino IDE",
 }

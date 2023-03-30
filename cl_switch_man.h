@@ -43,7 +43,15 @@ public:
 			Serial.print("i_lstr_state in Start cl_switch_man.set_offtime: ");
 			Serial.println(i_lstr_state);
 			delay(3000);
+			Serial.print("----i_lstr_autooff in Start cl_switch_man.set_offtime: ");
+			Serial.println(i_lstr_autooff);
+			Serial.print("i_lstr_state in Start cl_switch_man.set_offtime: ");
+			Serial.println(i_lstr_state);
+			delay(3000);
 		}
+		i_lstr_state.toCharArray(la_state, 2);
+		li_state = atoi(la_state);
+		if (i_lstr_autooff != "")
 		i_lstr_state.toCharArray(la_state, 2);
 		li_state = atoi(la_state);
 		if (i_lstr_autooff != "")
@@ -54,6 +62,11 @@ public:
 			i_lstr_autooff.toCharArray(la_autooff, 4);
 			li_autooff = atoi(la_autooff);
 			li_autooff = li_autooff * 60;
+			if (li_autooff == 0)
+			{
+				li_autooff = li_nooff;
+			}
+
 			if (li_autooff == 0)
 			{
 				li_autooff = li_nooff;
@@ -76,14 +89,23 @@ public:
 		if (i_lstr_state == "0")
 		{
 			if (la_debug == "X")
+			}
+			else if (li_autooff == li_nooff)
 			{
-				Serial.print("-----debugging function: ");
-				Serial.println(__FUNCTION__);
-				Serial.print("i_lstr_state beim Ausschalten: ");
-				Serial.println(i_lstr_state);
-				li_etime = 0;
-				li_state = 0;
-				li_autooff = 0;
+				li_etime = li_nooff;
+			}
+		}
+		if (i_lstr_state == "0")
+		{
+			if (la_debug == "X")
+			{
+			Serial.print("-----debugging function: ");
+			Serial.println(__FUNCTION__);
+			Serial.print("i_lstr_state beim Ausschalten: ");
+			Serial.println(i_lstr_state);
+			li_etime = 0;
+			li_state = 0;
+			li_autooff = 0;
 			}
 			//			gi_etime = gi_ettime + 59940;             //switch off after 999 min
 			//			gi_etime = 0;                             //bei Anmelden eines neuen client darf nicht initialisiert werden

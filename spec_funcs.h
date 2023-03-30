@@ -41,7 +41,11 @@ void mainhtml1(WiFiClient i_client, cl_switch_man lo_switch_man)
 	i_client.print("'><span style ='color:red;'>&nbsp;An</span>");
 	i_client.print("<br>Ausschalten in<input style='background-color:#FFFFE0' name='ttl' type='number' min='1' max='999' maxlength='3' size='3' autofocus>Minuten<br><br></p></form>");
 	i_client.print("<br><br><br>");
+<<<<<<< HEAD
+
+=======
     // -------------------------------------------------Display switchoff time
+>>>>>>> 79d8d3f23a5a0ee915813dcb758a688aef72405a
 	// timer:gi_etime is set && manual state not set OR manual end time set and status = on
 	if (((gi_etime > 0 && lo_switch_man.li_state == 0) || (lo_switch_man.li_etime > 0) && lo_switch_man.li_etime != lo_switch_man.li_nooff) && gi_state == 1)
 	{

@@ -4,8 +4,14 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
+<<<<<<< HEAD
+                "C:/Users/dolez/Arduino",
+                "C:/Users/dolez/AppData/Local/Arduino15/packages/**",
+                "C:/Users/dolez/AppData/Local/Arduino15/packages/esp32"
+=======
                 "C:\\Users\\dolez\\ArduinoData\\packages\\esp32\\hardware\\esp32\\2.0.5\\cores\\esp32",
                 "C:/Users/dolez/esp/**"
+>>>>>>> 79d8d3f23a5a0ee915813dcb758a688aef72405a
             ],
             "defines": [
                 "_DEBUG",
@@ -13,7 +19,7 @@
                 "_UNICODE"
             ],
             "windowsSdkVersion": "10.0.17763.0",
-            "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Tools/MSVC/14.16.27023/bin/Hostx64/x64/cl.exe",
+            "compilerPath": "",
             "cStandard": "c17",
             "cppStandard": "c++17",
             "intelliSenseMode": "windows-msvc-x64",
