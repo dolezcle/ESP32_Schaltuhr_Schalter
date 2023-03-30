@@ -51,7 +51,7 @@ void setup()
 	String ls_myip;
 	pinMode(gpio, OUTPUT);
 	Serial.begin(115200);
-	esp_efuse_read_mac(ga_chipid);
+	//esp_efuse_read_mac(ga_chipid);
 	// esp_read_mac(ga_chipid);
 	//  nvs_flash_erase(); // erase the NVS partition and...
 	//  nvs_flash_init();  // initialize the NVS partition.
